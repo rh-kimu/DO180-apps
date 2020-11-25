@@ -1,96 +1,9 @@
-[student@workstation ~]$ cp -p build_test.yaml pruner_deploy.yaml
-[student@workstation ~]$ vim pruner_deploy.yaml 
-[student@workstation ~]$ oc apploy -f pruner_deploy.yaml
-Error: unknown command "apploy" for "oc"
-
-Did you mean this?
-	apply
-
-Run 'oc --help' for usage.
-[student@workstation ~]$ oc apply -f pruner_deploy.yaml
-cronjob.batch/deployments-pruner created
-[student@workstation ~]$ oc get coronjob -n openshift-image-registry
-error: the server doesn't have a resource type "coronjob"
-[student@workstation ~]$ oc get cronjob -n openshift-image-registry
-NAME                 SCHEDULE     SUSPEND   ACTIVE   LAST SCHEDULE   AGE
-builds-pruner        15 4 * * *   False     0        104m            106m
-deployments-pruner   57 5 * * *   False     0        2m36s           5m
-image-pruner         0 0 * * *    False     0        <none>          111d
-[student@workstation ~]$ oc get get -n openshift-image-registry
-error: the server doesn't have a resource type "get"
-[student@workstation ~]$ oc get pod -n openshift-image-registry
-NAME                                               READY   STATUS      RESTARTS   AGE
-builds-pruner-1606277700-xs6nt                     0/1     Completed   0          104m
-cluster-image-registry-operator-5f47f6fcf7-bh22s   2/2     Running     0          111d
-deployments-pruner-1606283820-x2qh7                0/1     Completed   0          2m51s
-echo-1-deploy                                      0/1     Completed   0          168m
-echo-1-np2r5                                       1/1     Running     0          168m
-image-registry-64b69c4bf9-48xl5                    1/1     Running     0          111d
-node-ca-24k9d                                      1/1     Running     0          111d
-node-ca-lfh4z                                      1/1     Running     0          111d
-node-ca-qrrpd                                      1/1     Running     0          111d
-[student@workstation ~]$ oc logs deployments-pruner-1606283820-x2qh7
-Error from server (NotFound): pods "deployments-pruner-1606283820-x2qh7" not found
-[student@workstation ~]$ oc logs deployments-pruner-1606283820-x2qh7 -n openshift-image-registry
-Dry run enabled - no modifications will be made. Add --confirm to remove deployments
-NAMESPACE   NAME
-default     echo-1
-[student@workstation ~]$ oc delete -f pruner_deploy.yaml 
-cronjob.batch "deployments-pruner" deleted
-[student@workstation ~]$ vim pruner_deploy.yaml 
-[student@workstation ~]$ oc apply -f pruner_deploy.yaml
-cronjob.batch/deployments-pruner created
-[student@workstation ~]$ oc get replicationcontroller
-NAME     DESIRED   CURRENT   READY   AGE
-echo-1   0         0         0       79m
-echo-2   1         1         1       79m
-[student@workstation ~]$ 
-[student@workstation ~]$ oc get cronjob -n openshift-image-registry
-NAME                 SCHEDULE     SUSPEND   ACTIVE   LAST SCHEDULE   AGE
-builds-pruner        15 4 * * *   False     0        107m            109m
-deployments-pruner   5 6 * * *    False     0        <none>          57s
-image-pruner         0 0 * * *    False     0        <none>          111d
-[student@workstation ~]$ oc get pod -n openshift-image-registry
-NAME                                               READY   STATUS      RESTARTS   AGE
-builds-pruner-1606277700-xs6nt                     0/1     Completed   0          122m
-cluster-image-registry-operator-5f47f6fcf7-bh22s   2/2     Running     0          111d
-deployments-pruner-1606284300-fbhgw                0/1     Completed   0          12m
-echo-1-deploy                                      0/1     Completed   0          3h6m
-echo-1-np2r5                                       1/1     Running     0          3h6m
-image-registry-64b69c4bf9-48xl5                    1/1     Running     0          111d
-node-ca-24k9d                                      1/1     Running     0          111d
-node-ca-lfh4z                                      1/1     Running     0          111d
-node-ca-qrrpd                                      1/1     Running     0          111d
-[student@workstation ~]$ oc logs deployments-pruner-1606284300-fbhgw -n openshift-image-registry
-NAMESPACE   NAME
-default     echo-1
-[student@workstation ~]$ 
-[student@workstation ~]$ oc get replicationcontroller
-NAME     DESIRED   CURRENT   READY   AGE
-echo-2   1         1         1       95m
-[student@workstation ~]$ 
-[student@workstation ~]$ ls
-build_test.yaml        Desktop  Documents  Music     pruner_deploy.yaml  Templates          venv
-deployments_test.yaml  DO280    Downloads  Pictures  Public              test2_deploy.yaml  Videos
-[student@workstation ~]$ cd DO280/
-[student@workstation DO280]$ git checkout 
-fatal: not a git repository (or any of the parent directories): .git
-[student@workstation DO280]$ cd ..
-[student@workstation ~]$ git clone https://github.com/rh-kimu/DO180-apps.git
-Cloning into 'DO180-apps'...
-remote: Enumerating objects: 110, done.
-remote: Total 110 (delta 0), reused 0 (delta 0), pack-reused 110
-Receiving objects: 100% (110/110), 227.11 KiB | 2.37 MiB/s, done.
-Resolving deltas: 100% (25/25), done.
-[student@workstation ~]$ ls
-build_test.yaml        DO180-apps  Downloads  pruner_deploy.yaml  test2_deploy.yaml
-deployments_test.yaml  DO280       Music      Public              venv
-Desktop                Documents   Pictures   Templates           Videos
-[student@workstation ~]$ cat pruner_deploy.yaml 
+[student@workstation DO180-apps]$ cd ..
+[student@workstation ~]$ cat build_test.yaml 
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: deployments-pruner
+  name: builds-pruner
   namespace: openshift-image-registry
 spec:
   concurrencyPolicy: Forbid
@@ -99,7 +12,7 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
-        created-by: deployments-pruner
+        created-by: builds-pruner
     spec:
       template:
         metadata:
@@ -110,7 +23,7 @@ spec:
           - args:
             - adm
             - prune
-            - deployments
+            - builds
             - --orphans
             - --keep-complete=0
             - --keep-failed=0
@@ -143,9 +56,41 @@ spec:
               defaultMode: 420
               name: serviceca
             name: serviceca
-  schedule: 5 6 * * *
+  schedule: 15 4 * * *
   startingDeadlineSeconds: 3600
   successfulJobsHistoryLimit: 3
   suspend: false
 status: {}
+[student@workstation ~]$ oc get build
+NAME     TYPE     FROM          STATUS     STARTED       DURATION
+echo-1   Docker   Git@93ff810   Complete   3 hours ago   16s
+[student@workstation ~]$ vim build_test.yaml 
+[student@workstation ~]$ oc apply -f build_test.yaml 
+cronjob.batch/builds-pruner configured
+[student@workstation ~]$ oc get cronjob -n openshift-image-registry
+NAME                 SCHEDULE     SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+builds-pruner        47 7 * * *   False     0        3h29m           3h31m
+deployments-pruner   5 6 * * *    False     0        99m             103m
+image-pruner         0 0 * * *    False     0        <none>          111d
+[student@workstation ~]$ oc get pod -n openshift-image-registry
+NAME                                               READY   STATUS      RESTARTS   AGE
+builds-pruner-1606277700-xs6nt                     0/1     Completed   0          3h36m
+builds-pruner-1606290420-8nltr                     0/1     Completed   0          4m43s
+cluster-image-registry-operator-5f47f6fcf7-bh22s   2/2     Running     0          111d
+deployments-pruner-1606284300-fbhgw                0/1     Completed   0          106m
+echo-1-deploy                                      0/1     Completed   0          4h40m
+echo-1-np2r5                                       1/1     Running     0          4h40m
+image-registry-64b69c4bf9-48xl5                    1/1     Running     0          111d
+node-ca-24k9d                                      1/1     Running     0          111d
+node-ca-lfh4z                                      1/1     Running     0          111d
+node-ca-qrrpd                                      1/1     Running     0          111d
+[student@workstation ~]$ oc logs builds-pruner-1606290420-8nltr -n openshift-image-registry
+NAMESPACE   NAME
+default     echo-1
 [student@workstation ~]$ 
+[student@workstation ~]$ oc get build
+No resources found in default namespace.
+[student@workstation ~]$ oc get build -A
+No resources found
+[student@workstation ~]$ 
+
